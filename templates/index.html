@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Smart Mirror</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{{ 'hide-cursor' if hide_cursor else '' }}">
+  <main class="mirror">
+
+    <!-- Top left: weather -->
+    <section class="weather" aria-label="Weather">
+      <div class="weather__city" id="weather-city"></div>
+      <div class="weather__main">
+        <div class="weather__icon" id="weather-icon"></div>
+        <div class="weather__temp" id="weather-temp">--°C</div>
+      </div>
+      <div class="weather__condition" id="weather-condition"></div>
+      <div class="weather__range" id="weather-range"></div>
+    </section>
+
+    <!-- Top right: daily plan -->
+    <section class="plan" aria-label="Daily plan">
+      <h2 class="plan__title">Bugünün Planı</h2>
+      <ul class="plan__list" id="plan-list"></ul>
+    </section>
+
+    <!-- Center: greeting -->
+    <section class="greeting" aria-label="Greeting">
+      <div class="greeting__text" id="greeting-text"></div>
+      <div class="greeting__name">{{ mirror_name }}</div>
+    </section>
+
+    <!-- Bottom left: Spotify -->
+    <section class="music is-idle" id="music" aria-label="Now playing">
+      <div class="music__playing">
+        <img class="music__art" id="music-art" alt="" hidden>
+        <div class="music__info">
+          <div class="music__title" id="music-title"></div>
+          <div class="music__artist" id="music-artist"></div>
+          <div class="music__progress">
+            <span id="music-elapsed">0:00</span>
+            <div class="bar"><div class="bar__fill" id="music-fill"></div></div>
+            <span id="music-total">0:00</span>
+          </div>
+        </div>
+      </div>
+      <div class="music__idle" id="music-idle"></div>
+    </section>
+
+    <!-- Bottom right: time + room -->
+    <section class="status" aria-label="Time and room">
+      <div class="status__time" id="clock">--:--</div>
+      <div class="status__date" id="date"></div>
+      <div class="status__room">
+        <div class="status__temp" id="room-temp">--.-°C</div>
+        <div class="status__humidity" id="room-humidity">--% humidity</div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>window.MIRROR_CONFIG = {{ client_config|tojson }};</script>
+  <script src="{{ url_for('static', filename='js/icons.js') }}"></script>
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>

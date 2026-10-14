@@ -1,0 +1,88 @@
+:root {
+  --fg: #ffffff;
+  --soft: #c4c4c4;
+  --muted: #8c8c8c;
+  --dim: #5a5a5a;
+  --track: #333333;
+  --font: -apple-system, "SF Pro Display", "Helvetica Neue", "Inter", system-ui, sans-serif;
+  --safe-x: 5rem;   /* distance from screen edge; increase if the frame hides content */
+  --safe-y: 4.5rem;
+}
+
+/* 1rem = 16px at 1920x1080; everything scales with the window, keeping 16:9 proportions. */
+html { font-size: min(calc(100vw / 120), calc(100vh / 67.5)); }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: #000;
+  color: var(--fg);
+  overflow: hidden;
+  font-family: var(--font);
+  font-weight: 200;
+  -webkit-font-smoothing: antialiased;
+}
+
+body.hide-cursor, body.hide-cursor * { cursor: none; }
+
+.mirror {
+  box-sizing: border-box;
+  height: 100vh;
+  padding: var(--safe-y) var(--safe-x);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "weather  plan"
+    "greeting greeting"
+    "music    status";
+}
+
+/* ---------- Weather ---------- */
+.weather { grid-area: weather; }
+.weather__city { font-size: 1.6rem; color: var(--muted); letter-spacing: 0.04em; }
+.weather__main { display: flex; align-items: center; gap: 1.5rem; margin-top: 0.8rem; }
+.weather__icon { width: 5rem; height: 5rem; color: var(--fg); }
+.weather__icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+.weather__icon svg * { vector-effect: non-scaling-stroke; stroke-width: 0.1rem; }
+.weather__temp { font-size: 6rem; line-height: 1; }
+.weather__condition { font-size: 1.8rem; margin-top: 0.8rem; color: var(--soft); }
+.weather__range { font-size: 1.3rem; margin-top: 0.4rem; color: var(--muted); }
+
+/* ---------- Daily plan ---------- */
+.plan { grid-area: plan; justify-self: end; min-width: 22rem; }
+.plan__title { margin: 0 0 1.4rem; font-size: 1.6rem; font-weight: 200; color: var(--muted); letter-spacing: 0.04em; }
+.plan__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.9rem; }
+.plan__item { display: grid; grid-template-columns: 5rem 1fr; font-size: 1.9rem; font-weight: 300; }
+.plan__time { color: var(--muted); font-variant-numeric: tabular-nums; }
+.plan__empty { font-size: 1.5rem; color: var(--dim); }
+
+/* ---------- Greeting ---------- */
+.greeting { grid-area: greeting; align-self: center; justify-self: center; text-align: center; }
+.greeting__text { font-size: 2.8rem; color: var(--soft); letter-spacing: 0.08em; }
+.greeting__name { font-size: 10rem; line-height: 1.05; letter-spacing: -0.01em; }
+
+/* ---------- Spotify ---------- */
+.music { grid-area: music; align-self: end; justify-self: start; }
+.music__playing { display: flex; align-items: flex-end; gap: 1.8rem; }
+.music__art { width: 9rem; height: 9rem; object-fit: cover; display: block; }
+.music__info { width: 26rem; }
+.music__title, .music__artist { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.music__title { font-size: 2rem; font-weight: 300; }
+.music__artist { font-size: 1.4rem; color: var(--muted); margin-top: 0.3rem; }
+.music__progress { display: flex; align-items: center; gap: 1rem; margin-top: 1.2rem; font-size: 1.1rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.bar { flex: 1; height: 0.125rem; background: var(--track); }
+.bar__fill { height: 100%; width: 0; background: var(--fg); }
+.music__idle { font-size: 1.3rem; color: var(--dim); }
+.music.is-idle .music__playing { display: none; }
+.music:not(.is-idle) .music__idle { display: none; }
+
+/* ---------- Time + room ---------- */
+.status { grid-area: status; align-self: end; justify-self: end; text-align: right; }
+.status__time { font-size: 8rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.status__date { font-size: 1.8rem; color: var(--muted); margin-top: 0.6rem; }
+.status__room { margin-top: 2.4rem; }
+.status__temp { font-size: 3rem; }
+.status__humidity { font-size: 1.4rem; color: var(--muted); margin-top: 0.2rem; }
+
+.is-unavailable { color: var(--dim); }
