@@ -82,6 +82,11 @@ class Settings:
     spotify_client_secret: str = field(repr=False)  # keep the secret out of logs
     spotify_redirect_uri: str
     spotify_token_path: Path
+    calendar_source: str
+    apple_username: str
+    apple_app_password: str = field(repr=False)  # keep the password out of logs
+    caldav_url: str
+    calendar_names: tuple[str, ...]
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -117,6 +122,16 @@ class Settings:
         if "//localhost" in redirect_uri:
             log.warning("SPOTIFY_REDIRECT_URI uses 'localhost'; Spotify requires 127.0.0.1 instead")
 
+        apple_username = _env("APPLE_USERNAME")
+        apple_password = _env("APPLE_APP_PASSWORD")
+        calendar_source = _env("CALENDAR_SOURCE", "auto").lower()
+        if calendar_source not in {"auto", "icloud", "mock"}:
+            log.warning("Unknown CALENDAR_SOURCE %r, using 'auto'", calendar_source)
+            calendar_source = "auto"
+        if calendar_source == "auto":
+            calendar_source = "icloud" if apple_username and apple_password else "mock"
+        calendar_names = tuple(n.strip() for n in _env("CALENDAR_NAMES").split(",") if n.strip())
+
         return cls(
             environment=environment,
             debug=environment == "development",
@@ -137,6 +152,11 @@ class Settings:
             spotify_client_secret=client_secret,
             spotify_redirect_uri=redirect_uri,
             spotify_token_path=BASE_DIR / ".cache" / "spotify_token.json",
+            calendar_source=calendar_source,
+            apple_username=apple_username,
+            apple_app_password=apple_password,
+            caldav_url=_env("CALDAV_URL", "https://caldav.icloud.com"),
+            calendar_names=calendar_names,
         )
 
 

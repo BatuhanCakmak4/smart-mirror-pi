@@ -9,6 +9,7 @@
     weatherUnavailable: "Weather unavailable",
     calendarUnavailable: "Calendar unavailable",
     calendarEmpty: "Bugün için plan yok",
+    allDay: "Tüm gün",
     nothingPlaying: "Nothing playing",
   };
 
@@ -48,83 +49,12 @@
   const hourFmt = new Intl.DateTimeFormat("en-GB", { hour: "numeric", hourCycle: "h23", timeZone: tz });
   const dateFmt = new Intl.DateTimeFormat(cfg.locale, { day: "numeric", month: "long", weekday: "long", timeZone: tz });
 
-  let currentGreeting = null;
-let lastGreetingChange = 0;
-let currentPeriod = null;
-
-function greetingForHour(h) {
-    const greetings = {
-        morning: [
-            "Good morning",
-            "Rise and shine",
-            "Morning,",
-            "Ready for the day?",
-            "Let's make today count",
-            "A fresh day begins"
-        ],
-
-        afternoon: [
-            "Good afternoon",
-            "How's your day going?",
-            "Keep it going",
-            "Hope your day is going well",
-            "Still going strong?",
-            "Halfway through the day"
-        ],
-
-        evening: [
-            "Good evening",
-            "Welcome back",
-            "Time to slow down",
-            "How was your day?",
-            "Evening, Batuhan",
-            "Take it easy"
-        ],
-
-        night: [
-            "Good night",
-            "Time to rest",
-            "You made it through the day",
-            "Wind down",
-            "See you tomorrow",
-            "Sleep well"
-        ]
-    };
-
-    let period;
-
-    if (h >= 5 && h < 12) {
-        period = "morning";
-    } else if (h >= 12 && h < 18) {
-        period = "afternoon";
-    } else if (h >= 18 && h < 23) {
-        period = "evening";
-    } else {
-        period = "night";
-    }
-
-    const now = Date.now();
-
-    const periodChanged = period !== currentPeriod;
-    const fifteenMinutesPassed =
-        now - lastGreetingChange >= 15 * 60 * 1000;
-
-    if (
-        currentGreeting === null ||
-        periodChanged ||
-        fifteenMinutesPassed
-    ) {
-        const messages = greetings[period];
-
-        currentGreeting =
-            messages[Math.floor(Math.random() * messages.length)];
-
-        currentPeriod = period;
-        lastGreetingChange = now;
-    }
-
-    return currentGreeting;
-}
+  function greetingForHour(h) {
+    if (h >= 5 && h < 12) return "Günaydın";
+    if (h >= 12 && h < 18) return "İyi günler";
+    if (h >= 18 && h < 23) return "İyi akşamlar";
+    return "İyi geceler";
+  }
 
   function formatDate(now) {
     const p = Object.fromEntries(dateFmt.formatToParts(now).map((x) => [x.type, x.value]));
@@ -134,9 +64,16 @@ function greetingForHour(h) {
   // Dev helper: open /?hour=23 to preview a greeting without waiting for that time.
   const hourOverride = new URLSearchParams(location.search).get("hour");
 
+  let lastMinute = "";
+
   function tickClock() {
     const now = new Date();
-    setText("clock", timeFmt.format(now));
+    const hm = timeFmt.format(now);
+    setText("clock", hm);
+    if (hm !== lastMinute) { // once a minute: dim events that have ended
+      lastMinute = hm;
+      renderEvents();
+    }
     setText("date", formatDate(now));
     const hour = hourOverride !== null ? parseInt(hourOverride, 10) : parseInt(hourFmt.format(now), 10);
     setText("greeting-text", greetingForHour(hour));
@@ -175,6 +112,7 @@ function greetingForHour(h) {
 
   /* ---------- Calendar ---------- */
   let calendarLoaded = false;
+  let planEvents = null; // null = nothing received yet
 
   function renderPlan(items) {
     $("plan-list").replaceChildren(...items);
@@ -187,28 +125,37 @@ function greetingForHour(h) {
     return li;
   }
 
+  // Event titles come from the outside world, so only textContent is used (never innerHTML).
+  function renderEvents() {
+    if (planEvents === null) return;
+    if (planEvents.length === 0) return renderPlan([planMessage(TEXT.calendarEmpty)]);
+
+    const nowHm = timeFmt.format(new Date());
+    const items = planEvents.map((ev) => ({ ev, past: !ev.all_day && !!ev.end && ev.end <= nowHm }));
+    while (items.length > 8 && items[0].past) items.shift(); // keep room for upcoming events
+
+    renderPlan(
+      items.slice(0, 8).map(({ ev, past }) => {
+        const li = document.createElement("li");
+        li.className = past ? "plan__item plan__item--past" : "plan__item";
+        const time = document.createElement("span");
+        time.className = "plan__time";
+        time.textContent = ev.all_day ? TEXT.allDay : ev.start;
+        const name = document.createElement("span");
+        name.className = "plan__name";
+        name.textContent = ev.title;
+        li.append(time, name);
+        return li;
+      })
+    );
+  }
+
   async function updateCalendar() {
     try {
       const d = await getJSON("/api/calendar");
       if (!d.available) throw new Error("calendar unavailable");
-      if (d.events.length === 0) {
-        renderPlan([planMessage(TEXT.calendarEmpty)]);
-      } else {
-        // textContent (not innerHTML): event titles come from the outside world.
-        renderPlan(
-          d.events.slice(0, 8).map((ev) => {
-            const li = document.createElement("li");
-            li.className = "plan__item";
-            const time = document.createElement("span");
-            time.className = "plan__time";
-            time.textContent = ev.start;
-            const title = document.createElement("span");
-            title.textContent = ev.title;
-            li.append(time, title);
-            return li;
-          })
-        );
-      }
+      planEvents = d.events;
+      renderEvents();
       calendarLoaded = true;
       return true;
     } catch (err) {
